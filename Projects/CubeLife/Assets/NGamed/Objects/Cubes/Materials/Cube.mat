@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Grass
-  m_Shader: {fileID: 46, guid: 0000000000000000f000000000000000, type: 0}
+  m_Name: Cube
+  m_Shader: {fileID: 4800000, guid: f0c8f2b433c4849478001b161589a3cf, type: 3}
   m_ShaderKeywords: 
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -19,6 +19,46 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
+    - Side_AlbedoTexture:
+        m_Texture: {fileID: -3545901500533339292, guid: 8ef209a09718bf54f943b62087063fce,
+          type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - Side_HeightTexture:
+        m_Texture: {fileID: -4076749126328735209, guid: 8ef209a09718bf54f943b62087063fce,
+          type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - Side_NormalTexture:
+        m_Texture: {fileID: -2324850155280342480, guid: 8ef209a09718bf54f943b62087063fce,
+          type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - Side_RoughnessTexture:
+        m_Texture: {fileID: -6947768556813698412, guid: 8ef209a09718bf54f943b62087063fce,
+          type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - Top_AlbedoTexture:
+        m_Texture: {fileID: -3445902180689000385, guid: 152fda2a037791b4793340a2fb303b4e,
+          type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - Top_HeightTexture:
+        m_Texture: {fileID: -8042641701371684872, guid: 152fda2a037791b4793340a2fb303b4e,
+          type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - Top_NormalTexture:
+        m_Texture: {fileID: 3659445971192475515, guid: 152fda2a037791b4793340a2fb303b4e,
+          type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - Top_RoughnessTexture:
+        m_Texture: {fileID: -7431793274169205539, guid: 152fda2a037791b4793340a2fb303b4e,
+          type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _BumpMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -56,6 +96,17 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Floats:
+    - Depth: 0.2
+    - MaximumAngle: 60
+    - MinimumAngle: 20
+    - Side_Depth: 0.01
+    - Side_MaximumAngle: 70
+    - Side_MinimumAngle: 20
+    - Side_TextureScale: 1
+    - Top_Depth: 0.2
+    - Top_MaximumAngle: 60
+    - Top_MinimumAngle: 20
+    - Top_TextureScale: 1
     - _BumpScale: 1
     - _Cutoff: 0.5
     - _DetailNormalMapScale: 1

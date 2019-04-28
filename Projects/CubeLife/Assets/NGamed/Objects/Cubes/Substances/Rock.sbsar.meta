@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 152fda2a037791b4793340a2fb303b4e
+guid: 8ef209a09718bf54f943b62087063fce
 ScriptedImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -10,15 +10,15 @@ ScriptedImporter:
   script: {fileID: 232528478, guid: 43a8bbf65be290d44ba52b94476242b9, type: 3}
   version: 17
   mGraphInstanceData:
-  - graphLabel: Grass
-    prototypeName: Grass
+  - graphLabel: Rock
+    prototypeName: Rock
     graphDescIndex: 0
     generateAllOutputs: 1
     generateMipMaps: 1
-    preset: " <sbspreset pkgurl=\"pkg://Grass\" label=\"\" >\n  <presetinput identifier=\"$outputsize\"
-      uid=\"3399204861\" type=\"8\" value=\"10,10\" />\n </sbspreset>\n"
+    preset: " <sbspreset pkgurl=\"pkg://Rock\" label=\"\" >\n  <presetinput identifier=\"$outputsize\"
+      uid=\"608951390\" type=\"8\" value=\"10,10\" />\n </sbspreset>\n"
     shaderName: Standard
-    outputNames: baseColor,normal,metallic,height
+    outputNames: 
     texturePackingList:
     - outputName: baseColor
       alphaSource: baseColor
@@ -31,23 +31,23 @@ ScriptedImporter:
     - outputName: height
       alphaSource: height
     textureParameters:
-    - textureName: Grass - roughness
+    - textureName: Rock - roughness
       wrapMode: 0
       filterMode: 1
       aniso: 1
-    - textureName: Grass - baseColor
+    - textureName: Rock - baseColor
       wrapMode: 0
       filterMode: 1
       aniso: 1
-    - textureName: Grass - normal
+    - textureName: Rock - normal
       wrapMode: 0
       filterMode: 1
       aniso: 1
-    - textureName: Grass - metallic
+    - textureName: Rock - metallic
       wrapMode: 0
       filterMode: 1
       aniso: 1
-    - textureName: Grass - height
+    - textureName: Rock - height
       wrapMode: 0
       filterMode: 1
       aniso: 1
@@ -70,6 +70,6 @@ ScriptedImporter:
       textureHeight: 1024
       textureFormat: 0
       bGenerateOnLoad: 1
-    material: {fileID: -3035101939719975992, guid: 152fda2a037791b4793340a2fb303b4e,
+    material: {fileID: 3986188387995331715, guid: 8ef209a09718bf54f943b62087063fce,
       type: 3}
     generatedTextures: []
