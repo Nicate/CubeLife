@@ -19,6 +19,26 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
+    - Foam_AlbedoTexture:
+        m_Texture: {fileID: 2051096689807009091, guid: dd47c840db213c247b005af1dc073da3,
+          type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - Foam_HeightTexture:
+        m_Texture: {fileID: -5198248946307912860, guid: dd47c840db213c247b005af1dc073da3,
+          type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - Foam_NormalTexture:
+        m_Texture: {fileID: 5107365710583568310, guid: dd47c840db213c247b005af1dc073da3,
+          type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - Foam_RoughnessTexture:
+        m_Texture: {fileID: 6345062503318783712, guid: dd47c840db213c247b005af1dc073da3,
+          type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - Side_AlbedoTexture:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -51,6 +71,26 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - Top_RoughnessTexture:
+        m_Texture: {fileID: -5142938150002761586, guid: 1d8f8bee9c605ab4a9daeaa733dd7c20,
+          type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - Water_AlbedoTexture:
+        m_Texture: {fileID: -3194638689795231313, guid: 1d8f8bee9c605ab4a9daeaa733dd7c20,
+          type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - Water_HeightTexture:
+        m_Texture: {fileID: -8462275795431063193, guid: 1d8f8bee9c605ab4a9daeaa733dd7c20,
+          type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - Water_NormalTexture:
+        m_Texture: {fileID: 7819104051483148457, guid: 1d8f8bee9c605ab4a9daeaa733dd7c20,
+          type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - Water_RoughnessTexture:
         m_Texture: {fileID: -5142938150002761586, guid: 1d8f8bee9c605ab4a9daeaa733dd7c20,
           type: 3}
         m_Scale: {x: 1, y: 1}
@@ -92,7 +132,10 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Floats:
-    - Depth: 0.2
+    - BlendDepth: 0.2
+    - Depth: 0.15
+    - FoamDepth: 0.15
+    - Foam_TextureScale: 3
     - MaximumAngle: 60
     - MinimumAngle: 20
     - Side_Depth: 0.01
@@ -103,6 +146,7 @@ Material:
     - Top_MaximumAngle: 60
     - Top_MinimumAngle: 20
     - Top_TextureScale: 1
+    - Water_TextureScale: 3
     - _BumpScale: 1
     - _Cutoff: 0.5
     - _DetailNormalMapScale: 1
