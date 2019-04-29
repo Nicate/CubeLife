@@ -44,6 +44,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65101b5aa52d3ab4fa3d90a5b46393c4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  width: 11
+  depth: 11
   cubePrefabs:
   - {fileID: -2094324600552617463, guid: 5a0c54846a203254fad44ede7cee2c1a, type: 3}
   - {fileID: -2338745932041483110, guid: 46cde1bbab7196145bff5ff0d292b5da, type: 3}
@@ -54,6 +56,7 @@ MonoBehaviour:
   - {fileID: 5904391302111831557, guid: e4878e6086c35de41ab4f5730c2b5a5f, type: 3}
   - {fileID: -268577475017388309, guid: c18abe51b564f33478aa1c85866eb3f8, type: 3}
   - {fileID: 3964625470743792669, guid: a0dcadd8b4122f34fb524cd5819b6e03, type: 3}
+  - {fileID: -2338745932041483110, guid: 0c3ede1ab2e11a84fb39029e2e8fa67d, type: 3}
 --- !u!114 &5902236483244997321
 MonoBehaviour:
   m_ObjectHideFlags: 0
