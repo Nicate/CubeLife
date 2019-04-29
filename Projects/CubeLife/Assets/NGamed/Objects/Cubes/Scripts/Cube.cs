@@ -1,6 +1,8 @@
 ﻿using UnityEngine;
 
 public class Cube : MonoBehaviour {
+	public float weight;
+
 	public string[] frontConstraints;
 	public string[] rightConstraints;
 	public string[] backConstraints;

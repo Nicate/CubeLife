@@ -56,7 +56,7 @@ public class Cubes : MonoBehaviour {
 
 		Dictionary<Location, Tuple<Cube, int>> deployments = new Dictionary<Location, Tuple<Cube, int>>();
 
-		foreach(Location location in locations.ToArray()) {
+		foreach(Location location in locations) {
 			string[] front = edges[new Tuple<int, int, int, int>(location.x, location.y - 1, location.x, location.y)];
 			string[] right = edges[new Tuple<int, int, int, int>(location.x, location.y, location.x + 1, location.y)];
 			string[] back = edges[new Tuple<int, int, int, int>(location.x, location.y, location.x, location.y + 1)];
@@ -80,28 +80,43 @@ public class Cubes : MonoBehaviour {
 				rotatedKey = rotatedKey.rotateCCW();
 			}
 
+			
+			// This should work as we supplied all possible variations of cubes.
+			Tuple<Cube, int> candidate = candidates[UnityEngine.Random.Range(0, candidates.Count)];
 
-			if(candidates.Count > 0) {
-				// This should work as we supplied all possible variations of cubes.
-				Tuple<Cube, int> candidate = candidates[UnityEngine.Random.Range(0, candidates.Count)];
+			float totalWeight = 0.0f;
 
-				deployments.Add(location, candidate);
+			foreach(Tuple<Cube, int> turd in candidates) {
+				totalWeight += turd.Item1.weight;
+			}
 
+			float value = UnityEngine.Random.value;
 
-				Constraints edgeKey = new Constraints(candidate.Item1.frontConstraints, candidate.Item1.rightConstraints, candidate.Item1.backConstraints, candidate.Item1.leftConstraints);
+			float cumulative = 0.0f;
 
-				for(int rotation = 0; rotation < candidate.Item2; rotation += 1) {
-					edgeKey = edgeKey.rotateCW();
+			foreach(Tuple<Cube, int> turd in candidates) {
+				cumulative += turd.Item1.weight / totalWeight;
+
+				if(value < cumulative) {
+					candidate = turd;
+
+					break;
 				}
+			}
 
-				edges[new Tuple<int, int, int, int>(location.x, location.y - 1, location.x, location.y)] = edgeKey.front;
-				edges[new Tuple<int, int, int, int>(location.x, location.y, location.x + 1, location.y)] = edgeKey.right;
-				edges[new Tuple<int, int, int, int>(location.x, location.y, location.x, location.y + 1)] = edgeKey.back;
-				edges[new Tuple<int, int, int, int>(location.x - 1, location.y, location.x, location.y)] = edgeKey.left;
+			deployments.Add(location, candidate);
+
+
+			Constraints edgeKey = new Constraints(candidate.Item1.frontConstraints, candidate.Item1.rightConstraints, candidate.Item1.backConstraints, candidate.Item1.leftConstraints);
+
+			for(int rotation = 0; rotation < candidate.Item2; rotation += 1) {
+				edgeKey = edgeKey.rotateCW();
 			}
-			else {
-				locations.Remove(location);
-			}
+
+			edges[new Tuple<int, int, int, int>(location.x, location.y - 1, location.x, location.y)] = edgeKey.front;
+			edges[new Tuple<int, int, int, int>(location.x, location.y, location.x + 1, location.y)] = edgeKey.right;
+			edges[new Tuple<int, int, int, int>(location.x, location.y, location.x, location.y + 1)] = edgeKey.back;
+			edges[new Tuple<int, int, int, int>(location.x - 1, location.y, location.x, location.y)] = edgeKey.left;
 		}
 
 

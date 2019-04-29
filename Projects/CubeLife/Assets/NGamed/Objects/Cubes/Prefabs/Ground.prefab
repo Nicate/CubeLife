@@ -167,6 +167,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 78e25f801798e6b43beae69c91b246e2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  weight: 0.4
   frontConstraints:
   - grass
   rightConstraints:
