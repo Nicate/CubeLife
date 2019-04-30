@@ -57,9 +57,9 @@ MonoBehaviour:
   - {fileID: -268577475017388309, guid: c18abe51b564f33478aa1c85866eb3f8, type: 3}
   - {fileID: 3964625470743792669, guid: a0dcadd8b4122f34fb524cd5819b6e03, type: 3}
   - {fileID: -2338745932041483110, guid: 0c3ede1ab2e11a84fb39029e2e8fa67d, type: 3}
-  borderWidth: 20
+  borderWidth: 10
   innerBorder: grass
-  outerBorder: water
+  outerBorder: mesa
   wildcard: '*'
 --- !u!114 &5902236483244997321
 MonoBehaviour:
