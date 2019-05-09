@@ -20,10 +20,38 @@ public class Cubes : MonoBehaviour {
 	
 	public string wildcard;
 
+	public string cubeeAgentName;
+	public string satanAgentName;
+
 
 	private Dictionary<Location, Cube> cubes;
 
-	private MeshCollider surface;
+	private NavMeshSurface cubeeNavigationMesh;
+	private NavMeshSurface satanNavigationMesh;
+
+	private MeshCollider cubeeSurface;
+	private MeshCollider satanSurface;
+
+	private float[] cubeeWeights;
+	private float[] satanWeights;
+
+
+	private void Awake() {
+		foreach(NavMeshSurface navigationMesh in GetComponents<NavMeshSurface>()) {
+			string name = NavMesh.GetSettingsNameFromID(navigationMesh.agentTypeID);
+			
+			if(name == cubeeAgentName) {
+				cubeeNavigationMesh = navigationMesh;
+				
+				cubeeSurface = gameObject.AddComponent<MeshCollider>();
+			}
+			else if(name == satanAgentName) {
+				satanNavigationMesh = navigationMesh;
+
+				satanSurface = gameObject.AddComponent<MeshCollider>();
+			}
+		}
+	}
 
 
 	private void Start() {
@@ -223,15 +251,26 @@ public class Cubes : MonoBehaviour {
 			cubes.Add(location, cube);
 		}
 
-		// Build surface.
-		generateSurface();
+		// Build surfaces.
+		cubeeWeights = generateSurface(cubeeNavigationMesh, cubeeSurface);
+		satanWeights = generateSurface(satanNavigationMesh, satanSurface);
 	}
 
 
-	private void generateSurface() {
+	private float[] generateSurface(NavMeshSurface navigationMesh, MeshCollider surface) {
+		// Disable all surfaces so we can build only the one we are supposed to.
+		foreach(NavMeshSurface navMeshSurface in GetComponents<NavMeshSurface>()) {
+			navMeshSurface.enabled = false;
+		}
+
+		foreach(MeshCollider meshCollider in GetComponents<MeshCollider>()) {
+			meshCollider.enabled = false;
+		}
+
 		// Build navigation mesh.
-		NavMeshSurface navigationMeshSurface = GetComponent<NavMeshSurface>();
-		navigationMeshSurface.BuildNavMesh();
+		navigationMesh.enabled = true;
+
+		navigationMesh.BuildNavMesh();
 
 		// Build surface mesh.
 		var triangulation = NavMesh.CalculateTriangulation();
@@ -240,23 +279,56 @@ public class Cubes : MonoBehaviour {
 		mesh.vertices = triangulation.vertices;
 		mesh.triangles = triangulation.indices;
 		mesh.RecalculateNormals();
-
-		surface = gameObject.AddComponent<MeshCollider>();
+		
 		surface.sharedMesh = mesh;
-	}
 
-	public Vector3? sampleSurface(Vector3 position, float distance) {
-		NavMeshHit hit;
+		// Calculate the surface area weights.
+		Vector3[] vertices = triangulation.vertices;
+		int[] triangles = triangulation.indices;
 
-		if(NavMesh.SamplePosition(position, out hit, distance, -1)) {
-			// For some reason SamplePosition does not return a position ON the NavMesh.
-			return new Vector3(hit.position.x, position.y, hit.position.z);
+		float[] weights = new float[triangles.Length];
+		float totalWeight = 0.0f;
+
+		for(int index = 0; index < triangles.Length; index += 3) {
+			int index0 = triangles[index + 0];
+			int index1 = triangles[index + 1];
+			int index2 = triangles[index + 2];
+
+			Vector3 v0 = vertices[index0];
+			Vector3 v1 = vertices[index1];
+			Vector3 v2 = vertices[index2];
+
+			float a = Vector3.Distance(v0, v1);
+			float b = Vector3.Distance(v1, v2);
+			float c = Vector3.Distance(v2, v0);
+
+			// Single line version of Heron's formula.
+			float area = 0.25f * Mathf.Sqrt((a + b + c) * (-a + b + c) * (a - b + c) * (a + b - c));
+
+			weights[index / 3] = area;
+			totalWeight += area;
 		}
 
-		return null;
+		weights[0] = weights[0] / totalWeight;
+
+		for(int index = 1; index < weights.Length; index += 1) {
+			weights[index] = weights[index - 1] + weights[index] / totalWeight;
+		}
+
+		// Reenable all surfaces.
+		foreach(NavMeshSurface navigationMeshSurface in GetComponents<NavMeshSurface>()) {
+			navigationMeshSurface.enabled = true;
+		}
+
+		foreach(MeshCollider meshCollider in GetComponents<MeshCollider>()) {
+			meshCollider.enabled = true;
+		}
+
+		return weights;
 	}
 
-	public Vector3? hitSurface(Ray ray, float distance) {
+
+	private Vector3? hitSurface(MeshCollider surface, Ray ray, float distance) {
 		RaycastHit hit;
 
 		if(surface.Raycast(ray, out hit, distance)) {
@@ -266,11 +338,61 @@ public class Cubes : MonoBehaviour {
 		return null;
 	}
 
-	public Vector3? pickSurface() {
-		Camera camera = Camera.main;
-
+	private Vector3? pickSurface(MeshCollider surface, Camera camera) {
 		Ray ray = camera.ScreenPointToRay(Input.mousePosition);
 
-		return hitSurface(ray, camera.farClipPlane);
+		return hitSurface(surface, ray, camera.farClipPlane);
+	}
+
+
+	private Vector3 sampleSurface(MeshCollider surface, float[] weights) {
+		// First pick a random triangle.
+		float value = Random.value;
+
+		int triangleIndex = 3 * weights.Length - 3;
+
+		for(int index = 0; index < weights.Length; index += 1) {
+			if(value < weights[index]) {
+				triangleIndex = 3 * index;
+
+				break;
+			}
+		}
+
+		int[] triangles = surface.sharedMesh.triangles;
+		Vector3[] vertices = surface.sharedMesh.vertices;
+
+		int vertexIndex0 = triangles[triangleIndex + 0];
+		int vertexIndex1 = triangles[triangleIndex + 1];
+		int vertexIndex2 = triangles[triangleIndex + 2];
+
+		Vector3 vertex0 = vertices[vertexIndex0];
+		Vector3 vertex1 = vertices[vertexIndex1];
+		Vector3 vertex2 = vertices[vertexIndex2];
+
+		// Then pick random barycentric coordinates within the triangle.
+		float lambda0 = Random.value;
+		float lambda1 = Random.value;
+		float lambda2 = Random.value;
+
+		return (lambda0 * vertex0 + lambda1 * vertex1 + lambda2 * vertex2) / (lambda0 + lambda1 + lambda2);
+	}
+
+
+	public Vector3? pickCubeeSurface() {
+		return pickSurface(cubeeSurface, Camera.main);
+	}
+
+	public Vector3? pickSatanSurface() {
+		return pickSurface(satanSurface, Camera.main);
+	}
+
+
+	public Vector3 sampleCubeeSurface() {
+		return sampleSurface(cubeeSurface, cubeeWeights);
+	}
+
+	public Vector3 sampleSatanSurface() {
+		return sampleSurface(satanSurface, satanWeights);
 	}
 }
