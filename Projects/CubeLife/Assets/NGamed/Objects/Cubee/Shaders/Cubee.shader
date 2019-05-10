@@ -18,11 +18,12 @@
 		Side_Depth("Depth", Range(0.01, 1.0)) = 0.2
 
 		[Header(Face)]
-		[NoScaleOffset] Face_AlbedoTexture("Happy", 2D) = "black" {}
+		[NoScaleOffset] Face_AlbedoTexture("Albedo", 2D) = "black" {}
 		[PowerSlider(2.0)] Face_TextureScale("Scale", Range(0.5, 2.0)) = 1.0
+		Face_Roughness("Roughness", Range(0.0, 1.0)) = 1.0
 
 		[Header(Debug)]
-		[Toggle] Face_Enabled("Face", Float) = 0.0
+		[Toggle] Face("Face", Float) = 0.0
     }
     SubShader {
         Tags { "RenderType"="Opaque" }
@@ -37,6 +38,7 @@
 			struct Input {
 				float3 position;
 				float3 surfaceNormal;
+				float2 coordinates;
 			};
 
 
@@ -45,6 +47,7 @@
 
 				input.position = data.vertex.xyz;
 				input.surfaceNormal = data.normal.xyz;
+				input.coordinates = data.texcoord.xy;
 
 				// We provide normals in object space.
 				data.tangent = float4(1.0, 0.0, 0.0, 1.0);
@@ -65,6 +68,12 @@
 			float Side_MinimumAngle;
 			float Side_MaximumAngle;
 			float Side_Depth;
+
+			sampler2D Face_AlbedoTexture;
+			float Face_TextureScale;
+			float Face_Roughness;
+
+			float Face;
 
 
 			struct Material {
@@ -154,6 +163,14 @@
 			}
 
 
+			MaterialSample sampleFaceMaterial(sampler2D albedos, float roughness, float3 position, float3 normal, float2 initialCoordinates, float scale) {
+				float2 coordinates = 0.5 + (initialCoordinates - 0.5) * scale;
+
+				float4 albedo = tex2D(albedos, coordinates);
+
+				return createSample(albedo, normal, roughness, 0.0);
+			}
+
 
 			float calculateBlend(float opposite, float minimumAngle, float maximumAngle) {
 				float angle = degrees(acos(saturate(opposite)));
@@ -207,11 +224,21 @@
 
 				return createSample(albedo, normal, roughness, sampleHeight);
 			}
+
+			MaterialSample lerpSamples(MaterialSample materialSample1, MaterialSample materialSample2, float blend) {
+				float4 albedo = lerp(materialSample1.albedo, materialSample2.albedo, blend);
+				float3 normal = normalize(lerp(materialSample1.normal, materialSample2.normal, blend));
+				float roughness = lerp(materialSample1.roughness, materialSample2.roughness, blend);
+				float height = lerp(materialSample1.height, materialSample2.height, blend);
+
+				return createSample(albedo, normal, roughness, height);
+			}
 			
 			
 			void surf(Input input, inout SurfaceOutputStandard output) {
 				float3 position = input.position;
 				float3 normal = normalize(input.surfaceNormal);
+				float2 coordinates = input.coordinates;
 				
 				Material material = createMaterial(AlbedoTexture, NormalTexture, RoughnessTexture, HeightTexture);
 				
@@ -221,6 +248,7 @@
 				MaterialSample backSample = sampleBackMaterial(material, position, normal, TextureScale);
 				MaterialSample bottomSample = sampleBottomMaterial(material, position, normal, TextureScale);
 				MaterialSample topSample = sampleTopMaterial(material, position, normal, TextureScale);
+				MaterialSample faceSample = sampleFaceMaterial(Face_AlbedoTexture, Face_Roughness, position, normal, coordinates, Face_TextureScale);
 				
 				float leftBlend = calculateLeftBlend(normal, Side_MinimumAngle, Side_MaximumAngle);
 				float rightBlend = calculateRightBlend(normal, Side_MinimumAngle, Side_MaximumAngle);
@@ -234,6 +262,7 @@
 				materialSample = blendSamples(materialSample, backSample, backBlend, Side_Depth);
 				materialSample = blendSamples(materialSample, bottomSample, bottomBlend, Base_Depth);
 				materialSample = blendSamples(materialSample, topSample, topBlend, Base_Depth);
+				materialSample = lerpSamples(materialSample, faceSample, faceSample.albedo.a * Face);
 
 				output.Albedo = materialSample.albedo.rgb;
 				output.Normal = materialSample.normal;

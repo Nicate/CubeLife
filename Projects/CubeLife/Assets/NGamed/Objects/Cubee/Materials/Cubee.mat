@@ -9,7 +9,7 @@ Material:
   m_PrefabAsset: {fileID: 0}
   m_Name: Cubee
   m_Shader: {fileID: 4800000, guid: 16031155ffeb0ee46a7f026347043758, type: 3}
-  m_ShaderKeywords: 
+  m_ShaderKeywords: FACE_ON
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -123,7 +123,9 @@ Material:
     - Base_Depth: 0.01
     - Base_MaximumAngle: 89
     - Base_MinimumAngle: 30
+    - Face: 1
     - Face_Enabled: 0
+    - Face_Roughness: 1
     - Face_TextureScale: 1
     - Side_Depth: 0.01
     - Side_MaximumAngle: 89
