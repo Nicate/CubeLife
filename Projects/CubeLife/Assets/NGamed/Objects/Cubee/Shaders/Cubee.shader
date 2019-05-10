@@ -1,28 +1,28 @@
 ﻿Shader "CubeLife/Cubee" {
     Properties {
-		[Header(Top)]
-		[NoScaleOffset] Top_AlbedoTexture("Albedo", 2D) = "white" {}
-		[NoScaleOffset] [Normal] Top_NormalTexture("Normal", 2D) = "bump" {}
-		[NoScaleOffset] Top_RoughnessTexture("Roughness", 2D) = "black" {}
-		[NoScaleOffset] Top_HeightTexture("Height", 2D) = "black" {}
-		[PowerSlider(2.0)] Top_TextureScale("Scale", Range(1.0, 100.0)) = 10.0
+		[Header(Skin)]
+		[NoScaleOffset] AlbedoTexture("Albedo", 2D) = "white" {}
+		[NoScaleOffset] [Normal] NormalTexture("Normal", 2D) = "bump" {}
+		[NoScaleOffset] RoughnessTexture("Roughness", 2D) = "black" {}
+		[NoScaleOffset] HeightTexture("Height", 2D) = "black" {}
+		[PowerSlider(2.0)] TextureScale("Scale", Range(1.0, 100.0)) = 10.0
 
-		[Header(Side)]
-		[NoScaleOffset] Side_AlbedoTexture("Albedo", 2D) = "white" {}
-		[NoScaleOffset] [Normal] Side_NormalTexture("Normal", 2D) = "bump" {}
-		[NoScaleOffset] Side_RoughnessTexture("Roughness", 2D) = "black" {}
-		[NoScaleOffset] Side_HeightTexture("Height", 2D) = "black" {}
-		[PowerSlider(2.0)] Side_TextureScale("Scale", Range(1.0, 100.0)) = 10.0
-
-		[Header(Top Transition)]
-		Top_MinimumAngle("Minimum Angle", Range(1.0, 89.0)) = 10.0
-		Top_MaximumAngle("Maximum Angle", Range(1.0, 89.0)) = 60.0
-		Top_Depth("Depth", Range(0.01, 1.0)) = 0.2
+		[Header(Base Transition)]
+		Base_MinimumAngle("Minimum Angle", Range(1.0, 89.0)) = 10.0
+		Base_MaximumAngle("Maximum Angle", Range(1.0, 89.0)) = 60.0
+		Base_Depth("Depth", Range(0.01, 1.0)) = 0.2
 
 		[Header(Side Transition)]
 		Side_MinimumAngle("Minimum Angle", Range(1.0, 89.0)) = 10.0
 		Side_MaximumAngle("Maximum Angle", Range(1.0, 89.0)) = 60.0
 		Side_Depth("Depth", Range(0.01, 1.0)) = 0.2
+
+		[Header(Face)]
+		[NoScaleOffset] Face_AlbedoTexture("Happy", 2D) = "black" {}
+		[PowerSlider(2.0)] Face_TextureScale("Scale", Range(0.5, 2.0)) = 1.0
+
+		[Header(Debug)]
+		[Toggle] Face_Enabled("Face", Float) = 0.0
     }
     SubShader {
         Tags { "RenderType"="Opaque" }
@@ -35,17 +35,15 @@
 
 
 			struct Input {
-				float3 worldPosition;
+				float3 position;
 				float3 surfaceNormal;
 			};
 
 
 			void vert(inout appdata_full data, out Input input) {
 				UNITY_INITIALIZE_OUTPUT(Input, input);
-				
-				float4 position = mul(unity_ObjectToWorld, data.vertex);
 
-				input.worldPosition = position.xyz / position.w;
+				input.position = data.vertex.xyz;
 				input.surfaceNormal = data.normal.xyz;
 
 				// We provide normals in object space.
@@ -54,21 +52,15 @@
 			}
 
 
-			sampler2D Top_AlbedoTexture;
-			sampler2D Top_NormalTexture;
-			sampler2D Top_RoughnessTexture;
-			sampler2D Top_HeightTexture;
-			float Top_TextureScale;
+			sampler2D AlbedoTexture;
+			sampler2D NormalTexture;
+			sampler2D RoughnessTexture;
+			sampler2D HeightTexture;
+			float TextureScale;
 
-			sampler2D Side_AlbedoTexture;
-			sampler2D Side_NormalTexture;
-			sampler2D Side_RoughnessTexture;
-			sampler2D Side_HeightTexture;
-			float Side_TextureScale;
-
-			float Top_MinimumAngle;
-			float Top_MaximumAngle;
-			float Top_Depth;
+			float Base_MinimumAngle;
+			float Base_MaximumAngle;
+			float Base_Depth;
 
 			float Side_MinimumAngle;
 			float Side_MaximumAngle;
@@ -113,123 +105,52 @@
 			}
 
 
-			MaterialSample sampleMaterial(Material material, float2 coordinates) {
+			MaterialSample sampleMaterial(Material material, float2 initialCoordinates, float2 scale, float3 initialTangent, float3 initialBitangent, float3 initialNormal) {
+				float2 coordinates = initialCoordinates * scale + 0.5;
+
+				float3 tangent = normalize(cross(initialNormal, initialBitangent));
+
+				// Although the error should never be visible because it would be covered up by another side, the
+				// NaNs are propagated through the blend (since 0 * NaN = NaN), still resulting in a visible error.
+				if(any(isnan(tangent))) {
+					tangent = initialTangent;
+				}
+
+				float3 bitangent = cross(tangent, initialNormal);
+
+				float3x3 objectSpaceToTangentSpace = float3x3(tangent, bitangent, initialNormal);
+				float3x3 tangentSpaceToObjectSpace = transpose(objectSpaceToTangentSpace);
+
 				float4 albedo = tex2D(material.albedos, coordinates);
-				float3 normal = UnpackNormal(tex2D(material.normals, coordinates));
+				float3 normal = mul(tangentSpaceToObjectSpace, UnpackNormal(tex2D(material.normals, coordinates)));
 				float roughness = tex2D(material.roughnesses, coordinates).r;
 				float height = tex2D(material.heights, coordinates).r;
 
 				return createSample(albedo, normal, roughness, height);
 			}
 
-			MaterialSample sampleFrontMaterial(Material material, float3 position, float3 normal, float scale) {
-				float2 coordinates = position.xy * scale + 0.5;
-
-				MaterialSample materialSample = sampleMaterial(material, coordinates);
-
-				float3 tangent = normalize(cross(normal, float3(0.0, 1.0, 0.0)));
-
-				// The error would never be visible because the top would cover it up but the NaNs are propagated through the blend (since 0 * NaN = NaN).
-				if(any(isnan(tangent))) {
-					tangent = float3(1.0, 0.0, 0.0);
-				}
-
-				float3 bitangent = cross(tangent, normal);
-
-				float3x3 objectSpaceToTangentSpace = float3x3(tangent, bitangent, normal);
-				float3x3 tangentSpaceToObjectSpace = transpose(objectSpaceToTangentSpace);
-
-				materialSample.normal = mul(tangentSpaceToObjectSpace, materialSample.normal);
-
-				return materialSample;
+			MaterialSample sampleLeftMaterial(Material material, float3 position, float3 normal, float scale) {
+				return sampleMaterial(material, position.zy, float2(-scale, scale), float3(0.0, 0.0, -1.0), float3(0.0, 1.0, 0.0), normal);
 			}
 
 			MaterialSample sampleRightMaterial(Material material, float3 position, float3 normal, float scale) {
-				float2 coordinates = position.zy * scale + 0.5;
+				return sampleMaterial(material, position.zy, float2(scale, scale), float3(0.0, 0.0, 1.0), float3(0.0, 1.0, 0.0), normal);
+			}
 
-				MaterialSample materialSample = sampleMaterial(material, coordinates);
-
-				float3 tangent = normalize(cross(normal, float3(0.0, 1.0, 0.0)));
-
-				// The error would never be visible because the top would cover it up but the NaNs are propagated through the blend (since 0 * NaN = NaN).
-				if(any(isnan(tangent))) {
-					tangent = float3(0.0, 0.0, 1.0);
-				}
-
-				float3 bitangent = cross(tangent, normal);
-
-				float3x3 objectSpaceToTangentSpace = float3x3(tangent, bitangent, normal);
-				float3x3 tangentSpaceToObjectSpace = transpose(objectSpaceToTangentSpace);
-
-				materialSample.normal = mul(tangentSpaceToObjectSpace, materialSample.normal);
-
-				return materialSample;
+			MaterialSample sampleFrontMaterial(Material material, float3 position, float3 normal, float scale) {
+				return sampleMaterial(material, position.xy, float2(scale, scale), float3(1.0, 0.0, 0.0), float3(0.0, 1.0, 0.0), normal);
 			}
 
 			MaterialSample sampleBackMaterial(Material material, float3 position, float3 normal, float scale) {
-				float2 coordinates = position.xy * float2(-scale, scale) + 0.5;
-
-				MaterialSample materialSample = sampleMaterial(material, coordinates);
-
-				float3 tangent = normalize(cross(normal, float3(0.0, 1.0, 0.0)));
-
-				// The error would never be visible because the top would cover it up but the NaNs are propagated through the blend (since 0 * NaN = NaN).
-				if(any(isnan(tangent))) {
-					tangent = float3(-1.0, 0.0, 0.0);
-				}
-
-				float3 bitangent = cross(tangent, normal);
-
-				float3x3 objectSpaceToTangentSpace = float3x3(tangent, bitangent, normal);
-				float3x3 tangentSpaceToObjectSpace = transpose(objectSpaceToTangentSpace);
-
-				materialSample.normal = mul(tangentSpaceToObjectSpace, materialSample.normal);
-
-				return materialSample;
+				return sampleMaterial(material, position.xy, float2(-scale, scale), float3(-1.0, 0.0, 0.0), float3(0.0, 1.0, 0.0), normal);
 			}
 
-			MaterialSample sampleLeftMaterial(Material material, float3 position, float3 normal, float scale) {
-				float2 coordinates = position.zy * float2(-scale, scale) + 0.5;
-
-				MaterialSample materialSample = sampleMaterial(material, coordinates);
-
-				float3 tangent = normalize(cross(normal, float3(0.0, 1.0, 0.0)));
-
-				// The error would never be visible because the top would cover it up but the NaNs are propagated through the blend (since 0 * NaN = NaN).
-				if(any(isnan(tangent))) {
-					tangent = float3(0.0, 0.0, -1.0);
-				}
-
-				float3 bitangent = cross(tangent, normal);
-
-				float3x3 objectSpaceToTangentSpace = float3x3(tangent, bitangent, normal);
-				float3x3 tangentSpaceToObjectSpace = transpose(objectSpaceToTangentSpace);
-
-				materialSample.normal = mul(tangentSpaceToObjectSpace, materialSample.normal);
-
-				return materialSample;
+			MaterialSample sampleBottomMaterial(Material material, float3 position, float3 normal, float scale) {
+				return sampleMaterial(material, position.xz, float2(scale, -scale), float3(1.0, 0.0, 0.0), float3(0.0, 0.0, -1.0), normal);
 			}
 
 			MaterialSample sampleTopMaterial(Material material, float3 position, float3 normal, float scale) {
-				float2 coordinates = position.xz * scale + 0.5;
-
-				MaterialSample materialSample = sampleMaterial(material, coordinates);
-
-				float3 tangent = normalize(cross(normal, float3(0.0, 0.0, 1.0)));
-
-				// The error would never be visible because the side would cover it up but the NaNs are propagated through the blend (since 0 * NaN = NaN).
-				if(any(isnan(tangent))) {
-					tangent = float3(1.0, 0.0, 0.0);
-				}
-
-				float3 bitangent = cross(tangent, normal);
-
-				float3x3 objectSpaceToTangentSpace = float3x3(tangent, bitangent, normal);
-				float3x3 tangentSpaceToObjectSpace = transpose(objectSpaceToTangentSpace);
-
-				materialSample.normal = mul(tangentSpaceToObjectSpace, materialSample.normal);
-
-				return materialSample;
+				return sampleMaterial(material, position.xz, float2(scale, scale), float3(1.0, 0.0, 0.0), float3(0.0, 0.0, 1.0), normal);
 			}
 
 
@@ -240,16 +161,24 @@
 				return 1.0 - saturate((angle - minimumAngle) / (maximumAngle - minimumAngle));
 			}
 
+			float calculateLeftBlend(float3 normal, float minimumAngle, float maximumAngle) {
+				return calculateBlend(-normal.x, minimumAngle, maximumAngle);
+			}
+
 			float calculateRightBlend(float3 normal, float minimumAngle, float maximumAngle) {
 				return calculateBlend(normal.x, minimumAngle, maximumAngle);
+			}
+
+			float calculateFrontBlend(float3 normal, float minimumAngle, float maximumAngle) {
+				return calculateBlend(-normal.z, minimumAngle, maximumAngle);
 			}
 
 			float calculateBackBlend(float3 normal, float minimumAngle, float maximumAngle) {
 				return calculateBlend(normal.z, minimumAngle, maximumAngle);
 			}
 
-			float calculateLeftBlend(float3 normal, float minimumAngle, float maximumAngle) {
-				return calculateBlend(-normal.x, minimumAngle, maximumAngle);
+			float calculateBottomBlend(float3 normal, float minimumAngle, float maximumAngle) {
+				return calculateBlend(-normal.y, minimumAngle, maximumAngle);
 			}
 
 			float calculateTopBlend(float3 normal, float minimumAngle, float maximumAngle) {
@@ -281,28 +210,31 @@
 			
 			
 			void surf(Input input, inout SurfaceOutputStandard output) {
-				float3 position = input.worldPosition;
+				float3 position = input.position;
 				float3 normal = normalize(input.surfaceNormal);
 				
-				Material sideMaterial = createMaterial(Side_AlbedoTexture, Side_NormalTexture, Side_RoughnessTexture, Side_HeightTexture);
-				Material topMaterial = createMaterial(Top_AlbedoTexture, Top_NormalTexture, Top_RoughnessTexture, Top_HeightTexture);
+				Material material = createMaterial(AlbedoTexture, NormalTexture, RoughnessTexture, HeightTexture);
 				
-				MaterialSample frontSample = sampleFrontMaterial(sideMaterial, position, normal, Side_TextureScale);
-				MaterialSample rightSample = sampleRightMaterial(sideMaterial, position, normal, Side_TextureScale);
-				MaterialSample backSample = sampleBackMaterial(sideMaterial, position, normal, Side_TextureScale);
-				MaterialSample leftSample = sampleLeftMaterial(sideMaterial, position, normal, Side_TextureScale);
-				MaterialSample topSample = sampleTopMaterial(topMaterial, position, normal, Top_TextureScale);
-
-				float rightBlend = calculateRightBlend(normal, Side_MinimumAngle, Side_MaximumAngle);
-				float backBlend = calculateBackBlend(normal, Side_MinimumAngle, Side_MaximumAngle);
+				MaterialSample leftSample = sampleLeftMaterial(material, position, normal, TextureScale);
+				MaterialSample rightSample = sampleRightMaterial(material, position, normal, TextureScale);
+				MaterialSample frontSample = sampleFrontMaterial(material, position, normal, TextureScale);
+				MaterialSample backSample = sampleBackMaterial(material, position, normal, TextureScale);
+				MaterialSample bottomSample = sampleBottomMaterial(material, position, normal, TextureScale);
+				MaterialSample topSample = sampleTopMaterial(material, position, normal, TextureScale);
+				
 				float leftBlend = calculateLeftBlend(normal, Side_MinimumAngle, Side_MaximumAngle);
-				float topBlend = calculateTopBlend(normal, Top_MinimumAngle, Top_MaximumAngle);
-
-				MaterialSample frontRightSample = blendSamples(frontSample, rightSample, rightBlend, Side_Depth);
-				MaterialSample frontRightBackSample = blendSamples(frontRightSample, backSample, backBlend, Side_Depth);
-				MaterialSample frontRightBackLeftSample = blendSamples(frontRightBackSample, leftSample, leftBlend, Side_Depth);
-				MaterialSample materialSample = blendSamples(frontRightBackLeftSample, topSample, topBlend, Top_Depth);
+				float rightBlend = calculateRightBlend(normal, Side_MinimumAngle, Side_MaximumAngle);
+				float frontBlend = calculateFrontBlend(normal, Side_MinimumAngle, Side_MaximumAngle);
+				float backBlend = calculateBackBlend(normal, Side_MinimumAngle, Side_MaximumAngle);
+				float bottomBlend = calculateBottomBlend(normal, Base_MinimumAngle, Base_MaximumAngle);
+				float topBlend = calculateTopBlend(normal, Base_MinimumAngle, Base_MaximumAngle);
 				
+				MaterialSample materialSample = blendSamples(leftSample, rightSample, rightBlend, Side_Depth);
+				materialSample = blendSamples(materialSample, frontSample, frontBlend, Side_Depth);
+				materialSample = blendSamples(materialSample, backSample, backBlend, Side_Depth);
+				materialSample = blendSamples(materialSample, bottomSample, bottomBlend, Base_Depth);
+				materialSample = blendSamples(materialSample, topSample, topBlend, Base_Depth);
+
 				output.Albedo = materialSample.albedo.rgb;
 				output.Normal = materialSample.normal;
 				output.Smoothness = 1.0 - materialSample.roughness;
